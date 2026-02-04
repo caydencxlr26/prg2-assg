@@ -8,24 +8,26 @@
     "net9.0": []
   },
   "packageFolders": {
-    "C:\\Users\\kayde\\.nuget\\packages\\": {}
+    "C:\\Users\\ling_\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\kayde\\OneDrive\\Desktop\\Projects\\prg2 project\\prg2-assg\\prg2-assg.csproj",
+      "projectUniqueName": "C:\\Users\\ling_\\Desktop\\kayden git stuff\\prg2-assg.csproj",
       "projectName": "prg2-assg",
-      "projectPath": "C:\\Users\\kayde\\OneDrive\\Desktop\\Projects\\prg2 project\\prg2-assg\\prg2-assg.csproj",
-      "packagesPath": "C:\\Users\\kayde\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\kayde\\OneDrive\\Desktop\\Projects\\prg2 project\\prg2-assg\\obj\\",
+      "projectPath": "C:\\Users\\ling_\\Desktop\\kayden git stuff\\prg2-assg.csproj",
+      "packagesPath": "C:\\Users\\ling_\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\ling_\\Desktop\\kayden git stuff\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\kayde\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\ling_\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
