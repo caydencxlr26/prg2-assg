@@ -1,17 +1,13 @@
-﻿//==========================================================
-// Student Number : S10272352
-// Student Name : Cheah Lok Weng Cayden
-// Partner Name : Kayden Tan Yu Hang
-//==========================================================
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace prg2_assg
 {
-    public class Menu
+    class Menu
     {
         public string MenuId { get; set; }
         public string MenuName { get; set; }

@@ -1,30 +1,41 @@
-//==========================================================
-// Student Number : S10273990
-// Student Name : Kayden Tan
-// Partner Name : Cayden Cheah
-//==========================================================
-
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace prg2_assg;
-
-public class Customer(string emailAddress, string customerName)
+namespace prg2_assg
 {
-    public string EmailAddress {get; set; } = emailAddress;
-    public string CustomerName {get; set; } = customerName;
-
-    public readonly List<Order> orderList = [];
-
-    public void AddOrder(Order order)
+    class Customer
     {
-        orderList.Add(order);
-    }
-    public void DisplayAllOrders()
-    {
-        foreach (Order order in orderList)
+        public string EmailAddress { get; set; }
+        public string CustomerName { get; set; }
+
+        public List<Order> CustomerOrders { get; set; } = new List<Order>();
+
+        public Customer(string emailAddress, string customerName)
         {
-            Console.WriteLine(order.ToString());
+            EmailAddress = emailAddress;
+            CustomerName = customerName;
+        }
+        public void AddOrder(Order order)
+        {
+            CustomerOrders.Add(order);
+        }
+        public void DisplayAllOrders()
+        {
+            foreach (Order order in CustomerOrders)
+            {
+                Console.WriteLine(order.ToString());
+            }
+        }
+        public bool RemoveOrder(Order order)
+        {
+            return CustomerOrders.Remove(order);
+        }
+        public override string ToString()
+        {
+            return "Email address: " + EmailAddress + "\t Customer Name: " + CustomerName;
         }
     }
-    public bool RemoveOrder(Order order) => orderList.Remove(order);
 }
