@@ -1,4 +1,6 @@
-﻿using prg2_assg;
+﻿using Microsoft.VisualBasic;
+using prg2_assg;
+using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 
 Dictionary<string, Restaurant> restaurantlist = new Dictionary<string, Restaurant>();
@@ -6,10 +8,10 @@ Dictionary<string, FoodItem> fooditemlist = new Dictionary<string, FoodItem>();
 Console.WriteLine("Welcome to the Gruberoo Food Delivery System");
 LoadData();
 
-
+int currentOrderId = 1000;
 Dictionary<string, Customer> customerList = [];
 LoadCustomers();
-LoadOrders();
+LoadOrders(ref currentOrderId);
 
 Console.WriteLine("");
 while (true)
@@ -27,21 +29,11 @@ while (true)
 
     if (choice == "1")
     {
-        Console.WriteLine("All Restaurants and Menu Items");
-        Console.WriteLine("==============================");
-        foreach (Restaurant restaurant in restaurantlist.Values)
-        {
-            Console.WriteLine(restaurant.ToString());
-            foreach(Menu menu in restaurant.RestaurantMenus)
-            {
-                Console.WriteLine(menu.ToString());
-                foreach(FoodItem foodItem in menu.FoodItemList)
-                {
-                    Console.WriteLine(foodItem.ToString());
-                }
-            }
-            Console.WriteLine("");
-        }
+        ListRestaurants();
+    }
+    else if (choice == "3")
+    {
+        CreateNewOrder(ref currentOrderId);
     }
     else if (choice == "0")
     {
@@ -53,7 +45,88 @@ while (true)
     }
 }
 
-
+// Data validation
+string ValidateNonEmptyInput(string message, string errorMessage = "Input must not be empty.")
+{
+    while (true)
+    {
+        Console.Write(message); string input = Console.ReadLine() ?? string.Empty;
+        if (string.IsNullOrEmpty(input))
+        {
+            Console.WriteLine(errorMessage);
+        }
+        else
+        {
+            return input;
+        }
+    }
+}
+string ValidateInputInList(string message, IEnumerable<string> list, string errorMessage = "Input not found in list.")
+{
+    while (true)
+    {
+        Console.Write(message); string input = Console.ReadLine() ?? string.Empty;
+        if (list.Contains(input))
+        {
+            return input;
+        }
+        else
+        {
+            Console.WriteLine(errorMessage);
+        }
+    }
+}
+DateOnly ValidateDateOnly(string message)
+{
+    while (true)
+    {
+        try
+        {
+            Console.Write(message); DateOnly date = DateOnly.Parse(Console.ReadLine() ?? string.Empty);
+            return date;
+        }
+        catch (FormatException)
+        {
+            Console.WriteLine("Invalid date.");
+        }
+    }
+}
+TimeOnly ValidateTimeOnly(string message)
+{
+    while (true)
+    {
+        try
+        {
+            Console.Write(message); TimeOnly time = TimeOnly.Parse(Console.ReadLine() ?? string.Empty);
+            return time;
+        }
+        catch (FormatException)
+        {
+            Console.WriteLine("Invalid time.");
+        }
+    }
+}
+int ValidateInt(string message, string errorMessage = "Invalid input.", float min = 0, float max = float.PositiveInfinity)
+{
+    while (true)
+    {
+        try
+        {
+            Console.Write(message); int number = Convert.ToInt16(Console.ReadLine());
+            if (number >= min && number <= max) {
+                return number;
+            }
+            else
+            {
+                Console.WriteLine("Input out of bounds.");
+            }
+        }
+        catch (FormatException)
+        {
+            Console.WriteLine("Invalid input.");
+        }
+    }
+}
 
 void LoadData()
 {
@@ -114,7 +187,7 @@ void LoadCustomers()
     }
     Console.WriteLine($"{customerList.Count} customers loaded!");
 }
-void LoadOrders()
+void LoadOrders(ref int currentOrderId)
 {
     int total = 0;
 
@@ -162,6 +235,132 @@ void LoadOrders()
         customerList[email].AddOrder(order);
         restaurantlist[restaurantId].RestaurantOrders.Enqueue(order);
         total += 1;
+        currentOrderId += 1;
     }
     Console.WriteLine($"{total} orders loaded!");
+}
+
+void ListRestaurants()
+{
+    Console.WriteLine("All Restaurants and Menu Items");
+    Console.WriteLine("==============================");
+    foreach (Restaurant restaurant in restaurantlist.Values)
+    {
+        Console.WriteLine(restaurant.ToString());
+        restaurant.DisplayMenu();
+        Console.WriteLine("");
+    }
+}
+
+void CreateNewOrder(ref int currentOrderId)
+{
+    Console.WriteLine("Create New Order");
+    Console.WriteLine("================");
+    string email = ValidateNonEmptyInput("Enter Customer Email: ");
+    string restaurantId = ValidateInputInList("Enter Restaurant ID: ", restaurantlist.Keys, errorMessage: "Restaurant not found.");
+
+    DateOnly deliveryDate = ValidateDateOnly("Enter Delivery Date (dd/mm/yyyy): ");
+    TimeOnly deliveryTime = ValidateTimeOnly("Enter Delivery Time (hh:mm): ");
+    DateTime deliveryDateTime = deliveryDate.ToDateTime(deliveryTime);
+
+    string deliveryAddress = ValidateNonEmptyInput("Enter Delivery Address: ");
+
+    Order order = new(++currentOrderId, DateTime.Now, 0, "", deliveryDateTime, deliveryAddress, "", false);
+
+    Restaurant restaurant = restaurantlist[restaurantId];
+    List<FoodItem> restaurantFoodList = [];
+    foreach (Menu menu in restaurant.RestaurantMenus)
+    {
+        foreach (FoodItem foodItem in menu.FoodItemList)
+        {
+            if (!restaurantFoodList.Contains(foodItem))
+            {
+                restaurantFoodList.Add(foodItem);
+            }
+        }
+    }
+
+    Console.WriteLine("\nAvailable Food Items: ");
+    int count = 0;
+    foreach (FoodItem foodItem1 in restaurantFoodList)
+    {
+        count++;
+        Console.WriteLine($"{count}: {foodItem1.ItemName} - ${foodItem1.ItemPrice:F2}");
+    }
+
+    string itemsString = "\"";
+    while (true)
+    {
+        int itemNumber = ValidateInt("Enter item number (0 to finish): ", "Invalid item number.", max: count);
+        if (itemNumber == 0)
+        {
+            break;
+        }
+        FoodItem foodItem = restaurantFoodList[itemNumber - 1];
+        int quantity = ValidateInt("Enter quantity: ", min: 1);
+        OrderedFoodItem orderedFoodItem = new(foodItem.ItemName, foodItem.ItemDesc, foodItem.ItemPrice, foodItem.Customise, quantity, 0);
+        order.AddOrderedFoodItem(orderedFoodItem);
+        if (itemsString == "\"")
+        {
+            itemsString += $"{foodItem.ItemName},{quantity}";
+        }
+        else
+        {
+            itemsString += $"|{foodItem.ItemName},{quantity}";
+        }
+    }
+    itemsString += "\"";
+    while (true)
+    {
+        Console.Write("Add special request? [Y/N]: "); string input = Console.ReadLine() ?? "";
+        if (input == "Y")
+        {
+            string specialRequest = ValidateNonEmptyInput("Enter special request: ");
+            foreach (OrderedFoodItem orderedFoodItem in order.OrderedFoodItemList)
+            {
+                orderedFoodItem.Customise = specialRequest;
+            }
+            break;
+        }
+        else if (input == "N")
+        {
+            break;
+        }
+        else
+        {
+            Console.WriteLine("Invalid input.");
+        }
+    }
+
+    double orderTotal = order.CalculateOrderTotal();
+    Console.WriteLine($"\nOrder Total: ${orderTotal:F2} + $5.00 (delivery) = ${orderTotal+5:F2}");
+    while (true)
+    {
+        Console.Write("Proceed to payment? [Y/N]: "); string input = Console.ReadLine() ?? "";
+        if (input == "Y")
+        {
+            Console.WriteLine("\nPayment method:");
+            string paymentMethod = ValidateInputInList("[CC] Credit Card / [PP] PayPal / [CD] Cash on Delivery: ", ["CC", "PP", "CD"], "Invalid payment method.");
+            order.OrderPaymentMethod = paymentMethod;
+            order.OrderPaid = true;
+            break;
+        }
+        else if (input == "N")
+        {
+            Console.WriteLine("Payment cancelled, terminating order...");
+            return;
+        }
+        else
+        {
+            Console.WriteLine("Invalid input.");
+        }
+    }
+    order.OrderStatus = "Pending";
+        customerList[email].AddOrder(order);
+        restaurant.RestaurantOrders.Enqueue(order);
+        using (StreamWriter sw = File.AppendText("orders.csv"))
+        {
+            sw.WriteLine($"{currentOrderId},{email},{restaurantId},{deliveryDate:dd/MM/yyyy},{deliveryTime:HH:mm},{deliveryAddress},{order.OrderDateTime:dd/MM/yyyy HH:mm},{orderTotal},{order.OrderStatus},{itemsString}");
+        }
+        Console.WriteLine($"\nOrder {order.OrderId} created successfully! Status: Pending");
 }

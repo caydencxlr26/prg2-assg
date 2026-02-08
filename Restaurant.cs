@@ -37,9 +37,13 @@ namespace prg2_assg
         }
         public void DisplayMenu()
         {
-            foreach (Menu menu in RestaurantMenus)
+            foreach(Menu menu in RestaurantMenus)
             {
-                Console.WriteLine(menu);
+                Console.WriteLine(menu.ToString());
+                foreach(FoodItem foodItem in menu.FoodItemList)
+                {
+                    Console.WriteLine(foodItem.ToString());
+                }
             }
         }
         public void AddMenu(Menu menu)

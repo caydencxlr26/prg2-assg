@@ -35,7 +35,7 @@ namespace prg2_assg
             OrderTotal = 0;
             foreach (OrderedFoodItem orderedFoodItem in OrderedFoodItemList)
             {
-                OrderTotal += orderedFoodItem.SubTotal;
+                OrderTotal += orderedFoodItem.CalculateSubtotal();
             }
             return OrderTotal;
         }
