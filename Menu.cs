@@ -34,7 +34,7 @@ namespace prg2_assg
         }
         public override string ToString()
         {
-            return "Menu Id: " + MenuId + "\tMenu Name: " + MenuName;
+            return $"  {MenuName} ({MenuId}):";
         }
     }
 }

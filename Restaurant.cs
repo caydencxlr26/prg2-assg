@@ -11,7 +11,7 @@ namespace prg2_assg
         public string RestaurantId { get; set; }
         public string RestaurantName { get; set; }
         public string RestaurantEmail { get; set; }
-        public List<Order> RestaurantOrders { get; set; } = new List<Order>();
+        public Queue<Order> RestaurantOrders { get; set; } = new Queue<Order>();
         public List<SpecialOffer> RestaurantSpecialOffers { get; set; } = new List<SpecialOffer>();
         public List<Menu> RestaurantMenus { get; set; } = new List<Menu>();
 
@@ -52,7 +52,7 @@ namespace prg2_assg
         }
         public override string ToString()
         {
-            return "Restaurant ID: " + RestaurantId + "\tRestaurant Name: " + RestaurantName + "\tRestaurant Email:" + RestaurantEmail;
+            return $"Restaurant: {RestaurantName} ({RestaurantId})";
         }
     }
 }

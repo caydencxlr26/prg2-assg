@@ -22,7 +22,7 @@ namespace prg2_assg
         }
         public override string ToString()
         {
-            return "Item Name: " + ItemName + "\tItem Description: " + ItemDesc + "\tItem Price: " + ItemPrice + "\tCustomisation: " + Customise;
+            return $"   - {ItemName}: {ItemDesc} - ${ItemPrice:F2}";
         }
     }
 }
