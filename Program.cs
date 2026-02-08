@@ -40,6 +40,7 @@ while (true)
                     Console.WriteLine(foodItem.ToString());
                 }
             }
+            Console.WriteLine("");
         }
     }
     else if (choice == "0")
