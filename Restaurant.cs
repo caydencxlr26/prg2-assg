@@ -1,10 +1,15 @@
-﻿using System;
+﻿//==========================================================
+// Student Number : S10272352
+// Student Name : Cheah Lok Weng Cayden
+// Partner Name : Kayden Tan Yu Hang
+//==========================================================
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace prg2_assg
+namespace S10272352_PRG2Assignment
 {
     class Restaurant
     {
@@ -23,14 +28,14 @@ namespace prg2_assg
         }
         public void DisplayOrders()
         {
-            foreach (Order order in RestaurantOrders)
+            foreach(Order order in RestaurantOrders)
             {
                 Console.WriteLine(order);
             }
         }
         public void DisplaySpecialOffers()
         {
-            foreach (SpecialOffer offer in RestaurantSpecialOffers)
+            foreach(SpecialOffer offer in RestaurantSpecialOffers)
             {
                 Console.WriteLine(offer);
             }
@@ -39,11 +44,7 @@ namespace prg2_assg
         {
             foreach(Menu menu in RestaurantMenus)
             {
-                Console.WriteLine(menu.ToString());
-                foreach(FoodItem foodItem in menu.FoodItemList)
-                {
-                    Console.WriteLine(foodItem.ToString());
-                }
+                Console.WriteLine(menu);
             }
         }
         public void AddMenu(Menu menu)
@@ -56,8 +57,9 @@ namespace prg2_assg
         }
         public override string ToString()
         {
-            return $"Restaurant: {RestaurantName} ({RestaurantId})";
+            return "Restaurant ID: " + RestaurantId + "\tRestaurant Name: " + RestaurantName + "\tRestaurant Email:" + RestaurantEmail;
         }
+
         public void AddOrder(Order order) => RestaurantOrders.Enqueue(order);
         public bool RemoveOrder(Order order)
         {

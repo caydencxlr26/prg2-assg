@@ -1,23 +1,28 @@
+﻿//==========================================================
+// Student Number : S10272352
+// Student Name : Cheah Lok Weng Cayden
+// Partner Name : Kayden Tan Yu Hang
+//==========================================================
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace prg2_assg
+namespace S10272352_PRG2Assignment
 {
     class Order
     {
-        public int OrderId { get; set; }
-        public DateTime OrderDateTime { get; set; }
-        public double OrderTotal { get; set; }
-        public string OrderStatus { get; set; }
-        public DateTime DeliveryDateTime { get; set; }
-        public string DeliveryAddress { get; set; }
-        public string OrderPaymentMethod { get; set; }
+        public int OrderId { get; set; } 
+        public DateTime OrderDateTime { get; set; } 
+        public double OrderTotal { get; set; } 
+        public string OrderStatus { get; set; } 
+        public DateTime DeliveryDateTime { get; set; } 
+        public string DeliveryAddress { get; set; } 
+        public string OrderPaymentMethod { get; set; } 
         public bool OrderPaid { get; set; }
 
-        public List<OrderedFoodItem> OrderedFoodItemList { get; set; } = new List<OrderedFoodItem>();
+        public  List<OrderedFoodItem> OrderedFoodItemList { get; set; } = new List<OrderedFoodItem>();
 
         public Order(int orderId, DateTime orderDateTime, double orderTotal, string orderStatus, DateTime deliveryDateTime, string deliveryAddress, string orderPaymentMethod, bool orderPaid)
         {

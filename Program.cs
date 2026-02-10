@@ -1,20 +1,23 @@
-﻿using Microsoft.VisualBasic;
-using prg2_assg;
-using System.ComponentModel.DataAnnotations;
-using System.Numerics;
-using System.Runtime.CompilerServices;
+﻿//==========================================================
+// Student Number : S10272352
+// Student Name : Cheah Lok Weng Cayden
+// Partner Name : Kayden Tan Yu Hang
+//==========================================================
+using S10272352_PRG2Assignment;
+using System.Globalization;
+using System.Reflection.Metadata.Ecma335;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 
 Dictionary<string, Restaurant> restaurantlist = new Dictionary<string, Restaurant>();
 Dictionary<string, FoodItem> fooditemlist = new Dictionary<string, FoodItem>();
+Dictionary<string, Customer> customerlist = new Dictionary<string, Customer>();
+Dictionary<int, Order> orderlist = new Dictionary<int, Order>();
+Stack<Order> refundedorders = new Stack<Order>();
+int currentOrderId = 1000;
 Console.WriteLine("Welcome to the Gruberoo Food Delivery System");
 LoadData();
-
-int currentOrderId = 1000;
-Dictionary<string, Customer> customerList = [];
-LoadCustomers();
-LoadOrders(ref currentOrderId);
-
-Console.WriteLine("");
+GetMenus();
 while (true)
 {
     // Main menu
@@ -26,31 +29,143 @@ while (true)
     Console.WriteLine("5. Modify an existing order");
     Console.WriteLine("6. Delete an existing order");
     Console.WriteLine("0. Exit");
-    Console.Write("Enter your choice: "); string choice = Console.ReadLine() ?? "";
-
+    Console.Write("Enter your choice: ");
+    string choice = Console.ReadLine();
     if (choice == "1")
     {
+        Console.WriteLine();
         ListRestaurants();
+    }
+    else if (choice == "2")
+    {
+        Console.WriteLine();
+        ListOrders();
     }
     else if (choice == "3")
     {
-        CreateNewOrder(ref currentOrderId);
+        CreateNewOrder(currentOrderId);
+    }
+    else if (choice == "4")
+    {
+        ProcessOrder();
     }
     else if (choice == "5")
     {
         ModifyOrder();
     }
-    else if (choice == "0")
+    else if (choice == "6")
     {
-        break;
+        DeleteOrder();
     }
+    else if (choice == "0") { break; }
     else
     {
         Console.WriteLine("Invalid choice.");
     }
 }
+using (StreamWriter sw = new StreamWriter("queue.csv"))
+{
+    foreach (string r in restaurantlist.Keys)
+    {
+        foreach (Order o in restaurantlist[r].RestaurantOrders)
+        {
+            sw.WriteLine(o);
+        }
+    }
+}
+using (StreamWriter sw = new StreamWriter("stack.csv"))
+{
+    foreach (Order o in refundedorders)
+    {
+        sw.WriteLine(o);
+    }
+}
+void LoadData()
+{
+    using (StreamReader sr = new StreamReader("restaurants.csv"))
+    {
+        string? line;
+        sr.ReadLine();
+        while ((line = sr.ReadLine()) != null)
+        {
+            string[] vals = line.Split(",");
+            Restaurant r = new Restaurant(vals[0], vals[1], vals[2]);
+            restaurantlist.Add(vals[0], r);
+        }
+        Console.WriteLine(restaurantlist.Count + " restaurants loaded!");
+    }
+    using (StreamReader sr = new StreamReader("fooditems.csv"))
+    {
+        string? line;
+        sr.ReadLine();
+        while ((line = sr.ReadLine()) != null)
+        {
+            string[] vals = line.Split(",");
+            string restaurantid = vals[0];
+            FoodItem fi = new FoodItem(vals[1], vals[2], Convert.ToDouble(vals[3]), "");
+            fooditemlist.Add(vals[1],fi);
+        }
+        Console.WriteLine(fooditemlist.Count + " food items loaded!");
+    }
+    using (StreamReader sr = new StreamReader("customers.csv"))
+    {
+        string? line;
+        sr.ReadLine();
+        while ((line = sr.ReadLine()) != null)
+        {
+            string[] vals = line.Split(",");
+            Customer c = new Customer(vals[1], vals[0]);
+            customerlist.Add(vals[1],c);
+        }
+        Console.WriteLine(customerlist.Count + " customers loaded!");
+    }
+    using (StreamReader sr = new StreamReader("orders.csv"))
+    {
+        string? line;
+        sr.ReadLine();
+        while ((line = sr.ReadLine()) != null)
+        {
+            string[] data = line.Split("\"");
+            string[] vals = data[0].Split(",");
+            int id = Convert.ToInt32(vals[0]);
+            double total = Convert.ToDouble(vals[7]);
+            string addr = vals[5];
+            string status = vals[8];
+            DateTime order = DateTime.ParseExact(vals[6], "dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
+            string temp = vals[3] + " " + vals[4];
+            DateTime delivery = DateTime.ParseExact(temp, "dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
+            Order o = new Order(id, order, total, status, delivery, addr, "", true);
+            orderlist.Add(id,o);
+            currentOrderId = id;
 
-// Data validation methods
+            string foodstring = data[1];
+            string[] foods = foodstring.Split("|");
+            foreach (string food in foods)
+            {   
+                string[] val = food.Split(",");
+                string name = val[0];
+                int quantity = Convert.ToInt32(val[1]);
+                FoodItem foodItem = fooditemlist[name];
+                OrderedFoodItem orderedFoodItem = new(
+                    foodItem.ItemName,
+                    foodItem.ItemDesc,
+                    foodItem.ItemPrice,
+                    foodItem.Customise,
+                    quantity,
+                    0
+                );
+                orderedFoodItem.CalculateSubtotal();
+
+                o.AddOrderedFoodItem(orderedFoodItem);
+
+            }
+            restaurantlist[vals[2]].RestaurantOrders.Enqueue(o);
+            customerlist[vals[1]].CustomerOrders.Add(o);
+    }
+        Console.WriteLine(orderlist.Count + " orders loaded!");
+    }
+}
+//data validation
 string ValidateNonEmptyInput(string message, string errorMessage = "Input must not be empty.")
 {
     while (true)
@@ -117,8 +232,9 @@ int ValidateInt(string message, string errorMessage = "Invalid input.", float mi
     {
         try
         {
-            Console.Write(message); int number = Convert.ToInt16(Console.ReadLine());
-            if (number >= min && number <= max) {
+            Console.Write(message); int number = Convert.ToInt32(Console.ReadLine());
+            if (number >= min && number <= max)
+            {
                 return number;
             }
             else
@@ -132,145 +248,98 @@ int ValidateInt(string message, string errorMessage = "Invalid input.", float mi
         }
     }
 }
-
-void LoadData()
+void GetMenus()
 {
-    using (StreamReader sr = new StreamReader("restaurants.csv"))
-    {
-        string? line;
-        sr.ReadLine();
-        int total = 0;
-        while((line=sr.ReadLine())!= null)
-        {
-            string[] vals = line.Split(",");
-            Restaurant r = new Restaurant(vals[0], vals[1], vals[2]);
-            total += 1;
-
-            Menu menu = new("M001", "Main Menu");
-            r.AddMenu(menu);
-
-            restaurantlist[vals[0]] = r;
-        }
-        Console.WriteLine(total + " restaurants loaded!");
-        sr.Close();
-    }
     using (StreamReader sr = new StreamReader("fooditems.csv"))
     {
         string? line;
-        sr.ReadLine(); 
-        int total = 0;
-        while ((line=sr.ReadLine())!= null)
+        sr.ReadLine();
+        Dictionary<string,List<FoodItem>> temprestaurants = new Dictionary<string,List<FoodItem>>();
+        while ((line = sr.ReadLine()) != null)
         {
             string[] vals = line.Split(",");
-            FoodItem fi = new FoodItem(vals[1], vals[2],Convert.ToDouble(vals[3]),"");
-            total += 1;
-            fooditemlist[vals[1]] = fi;
-
-            string restaurantId = vals[0];
-            Restaurant restaurant = restaurantlist[restaurantId];
-            restaurant.RestaurantMenus[0].AddFoodItem(fi);
+            string restaurantid = vals[0];
+            FoodItem fi = new FoodItem(vals[1], vals[2], Convert.ToDouble(vals[3]), "");
+            List<FoodItem> tempfooditems = new List<FoodItem>();
+            if (temprestaurants.Keys.Contains(restaurantid) == false)
+            {
+                temprestaurants[restaurantid] = tempfooditems;
+            }
+            temprestaurants[restaurantid].Add(fi);
         }
-        Console.WriteLine(total + " food items loaded!");
-        sr.Close();
+        foreach(string restid in temprestaurants.Keys)
+        {   
+            string menuid = restid.Replace("R","M");
+            string menuname = restaurantlist[restid].RestaurantName + "Menu";
+            Menu m = new(menuid, menuname);
+            foreach (FoodItem item in temprestaurants[restid])
+            {
+                m.AddFoodItem(item);
+            }
+            restaurantlist[restid].AddMenu(m);
+        }
     }
 }
-void LoadCustomers()
-{
-    string[] lines = File.ReadAllLines("customers.csv")[1..];
-    foreach (string line in lines)
-    {
-        if (string.IsNullOrEmpty(line)) {
-            continue;
-        }
-        string[] split_line = line.Split(",");
-
-        string name = split_line[0];
-        string email = split_line[1];
-
-        Customer c = new(email, name);
-        customerList[email] = c;
-    }
-    Console.WriteLine($"{customerList.Count} customers loaded!");
-}
-void LoadOrders(ref int currentOrderId)
-{
-    int total = 0;
-
-    string[] lines = File.ReadAllLines("orders.csv")[1..];
-    foreach (string line in lines)
-    {
-        if (string.IsNullOrEmpty(line))
-        {
-            continue;
-        }
-        string[] split_line = line.Split(",", 10);
-
-        int orderId = Convert.ToInt16(split_line[0]);
-        string email = split_line[1];
-        string restaurantId = split_line[2];
-        DateTime deliveryDateTime = Convert.ToDateTime($"{split_line[3]} {split_line[4]}");
-        string deliveryAddress = split_line[5];
-        DateTime createdDateTime = Convert.ToDateTime(split_line[6]);
-        double totalAmount = Convert.ToDouble(split_line[7]);
-        string status = split_line[8];
-        Order order = new(orderId, createdDateTime, totalAmount, status, deliveryDateTime, deliveryAddress, "", true);
-
-        string[] foods = split_line[9].Trim('"').Split('|');
-        foreach (string food in foods)
-        {
-            string[] split_food = food.Split(',');
-
-            string foodName = split_food[0];
-            int quantity = Convert.ToInt16(split_food[1]);
-
-            FoodItem foodItem = fooditemlist[foodName];
-            OrderedFoodItem orderedFoodItem = new(
-                foodItem.ItemName,
-                foodItem.ItemDesc,
-                foodItem.ItemPrice,
-                foodItem.Customise,
-                quantity,
-                0
-            );
-            orderedFoodItem.CalculateSubtotal();
-
-            order.AddOrderedFoodItem(orderedFoodItem);
-        }
-
-        customerList[email].AddOrder(order);
-        restaurantlist[restaurantId].RestaurantOrders.Enqueue(order);
-        total += 1;
-        currentOrderId += 1;
-    }
-    Console.WriteLine($"{total} orders loaded!");
-}
-
 void ListRestaurants()
 {
     Console.WriteLine("All Restaurants and Menu Items");
     Console.WriteLine("==============================");
     foreach (Restaurant restaurant in restaurantlist.Values)
     {
-        Console.WriteLine(restaurant.ToString());
-        restaurant.DisplayMenu();
-        Console.WriteLine("");
+        Console.WriteLine("Restaurant: {0} ({1})",restaurant.RestaurantName,restaurant.RestaurantId);
+        foreach(FoodItem item in restaurant.RestaurantMenus[0].FoodItemList)
+        {
+            Console.WriteLine("  - {0}: {1} - {2:C}", item.ItemName,item.ItemDesc,item.ItemPrice);
+        }
+        Console.WriteLine();
     }
 }
-
-void CreateNewOrder(ref int currentOrderId)
+void ListOrders()
+{
+    Console.WriteLine("All Orders");
+    Console.WriteLine("==========");
+    Console.WriteLine("{0,-12}{1,-15}{2,-20}{3,-30}{4,-10}{5,-12}", "Order ID", "Customer", "Restaurant", "Delivery Date/Time", "Amount", "Status");
+    Console.WriteLine("{0,-12}{1,-15}{2,-20}{3,-30}{4,-10}{5,-12}", "--------", "----------", "-------------", "------------------", "------", "---------");
+    string customername = " ";
+    string restaurantname = "";
+    foreach(int order in orderlist.Keys)
+    {
+        foreach(string r in restaurantlist.Keys)
+        {
+            foreach (Order o in restaurantlist[r].RestaurantOrders)
+            {
+                if (o.OrderId == order)
+                {
+                    restaurantname = restaurantlist[r].RestaurantName;
+                }
+            }
+        }
+        foreach(string c in customerlist.Keys)
+        {
+            foreach(Order ord in customerlist[c].CustomerOrders)
+            {
+                if (ord.OrderId == order)
+                {
+                    customername = customerlist[c].CustomerName;
+                }
+            }
+        }
+        Console.WriteLine("{0,-12}{1,-15}{2,-20}{3,-30}{4,-10:C}{5,-12}", order, customername, restaurantname, orderlist[order].DeliveryDateTime, orderlist[order].OrderTotal, orderlist[order].OrderStatus);
+    }
+    Console.WriteLine();
+}
+void CreateNewOrder(int currentOrderId)
 {
     Console.WriteLine("Create New Order");
     Console.WriteLine("================");
-    string email = ValidateNonEmptyInput("Enter Customer Email: ");
+    string email = ValidateInputInList("Enter Customer Email: ",customerlist.Keys, errorMessage: "Email not found.");
     string restaurantId = ValidateInputInList("Enter Restaurant ID: ", restaurantlist.Keys, errorMessage: "Restaurant not found.");
-
     DateOnly deliveryDate = ValidateDateOnly("Enter Delivery Date (dd/mm/yyyy): ");
     TimeOnly deliveryTime = ValidateTimeOnly("Enter Delivery Time (hh:mm): ");
     DateTime deliveryDateTime = deliveryDate.ToDateTime(deliveryTime);
-
     string deliveryAddress = ValidateNonEmptyInput("Enter Delivery Address: ");
-
-    Order order = new(++currentOrderId, DateTime.Now, 0, "", deliveryDateTime, deliveryAddress, "", false);
+    currentOrderId = currentOrderId + 1;
+    Order order = new(currentOrderId, DateTime.Now, 0, "", deliveryDateTime, deliveryAddress, "", false);
 
     Restaurant restaurant = restaurantlist[restaurantId];
     List<FoodItem> restaurantFoodList = [];
@@ -285,7 +354,7 @@ void CreateNewOrder(ref int currentOrderId)
         }
     }
 
-    Console.WriteLine("\nAvailable Food Items: ");
+    Console.WriteLine("Available Food Items: ");
     int count = 0;
     foreach (FoodItem foodItem1 in restaurantFoodList)
     {
@@ -336,7 +405,7 @@ void CreateNewOrder(ref int currentOrderId)
     itemsString += "\"";
 
     double orderTotal = order.CalculateOrderTotal();
-    Console.WriteLine($"\nOrder Total: ${orderTotal:F2} + $5.00 (delivery) = ${orderTotal+5:F2}");
+    Console.WriteLine($"\nOrder Total: ${orderTotal:F2} + $5.00 (delivery) = ${orderTotal + 5:F2}");
     while (true)
     {
         Console.Write("Proceed to payment? [Y/N]: "); string input = Console.ReadLine() ?? "";
@@ -359,15 +428,142 @@ void CreateNewOrder(ref int currentOrderId)
         }
     }
     order.OrderStatus = "Pending";
-        customerList[email].AddOrder(order);
-        restaurant.RestaurantOrders.Enqueue(order);
-        using (StreamWriter sw = File.AppendText("orders.csv"))
-        {
-            sw.WriteLine($"{currentOrderId},{email},{restaurantId},{deliveryDate:dd/MM/yyyy},{deliveryTime:HH:mm},{deliveryAddress},{order.OrderDateTime:dd/MM/yyyy HH:mm},{orderTotal},{order.OrderStatus},{itemsString}");
-        }
-        Console.WriteLine($"\nOrder {order.OrderId} created successfully! Status: Pending");
+    customerlist[email].AddOrder(order);
+    restaurant.RestaurantOrders.Enqueue(order);
+    orderlist.Add(currentOrderId, order);
+    //appends into bin/debug/net8.0
+    using (StreamWriter sw = new StreamWriter("orders.csv", true))
+    { 
+        sw.WriteLine($"{currentOrderId},{email},{restaurantId},{deliveryDate:dd/MM/yyyy},{deliveryTime:HH:mm},{deliveryAddress},{order.OrderDateTime:dd/MM/yyyy HH:mm},{orderTotal},{order.OrderStatus},{itemsString}");
+    }
+    Console.WriteLine($"\nOrder {order.OrderId} created successfully! Status: Pending");
 }
 
+//basic feature 6
+void ProcessOrder()
+{
+    Console.WriteLine("Process Order");
+    Console.WriteLine("=============");
+    string restaurantId = ValidateInputInList("Enter Restaurant ID: ", restaurantlist.Keys, errorMessage: "Restaurant not found.");
+    string customername = "";
+    string customeremail = "";
+    foreach (Order order in restaurantlist[restaurantId].RestaurantOrders)
+    {
+        Console.WriteLine("Order " + order.OrderId + ":");
+        foreach (string cust in customerlist.Keys)
+        {
+            foreach (Order o in customerlist[cust].CustomerOrders)
+            {
+                if (o.OrderId == order.OrderId)
+                {
+                    customername = customerlist[cust].CustomerName;
+                    customeremail = customerlist[cust].EmailAddress;
+                }
+            }
+        }
+        Console.WriteLine("Customer: " + customername);
+        Console.WriteLine("Ordered Items:");
+        int count = 0;
+        foreach (OrderedFoodItem ofl in orderlist[order.OrderId].OrderedFoodItemList)
+        {
+            count += 1;
+            Console.WriteLine(count + ". " + ofl.ItemName + " - " + ofl.QtyOrdered);
+        }
+        Console.WriteLine("Delivery date/time: " + order.DeliveryDateTime);
+        Console.WriteLine("Total Amount: " + order.OrderTotal);
+        Console.WriteLine("Order Status: " + order.OrderStatus);
+        Console.WriteLine();
+        string process = ValidateInputInList("[C]onfirm / [R]eject / [S]kip / [D]eliver: ", ["C", "R", "S", "D"], "Invalid process option.");
+        Console.WriteLine();
+        if (process == "C")
+        {
+            if (order.OrderStatus == "Pending")
+            {
+                order.OrderStatus = "Preparing";
+                Console.WriteLine("Order " + order.OrderId + " confirmed. Status: " + order.OrderStatus);
+                Console.WriteLine();
+                orderlist[order.OrderId] = order;
+                foreach (string cust in customerlist.Keys)
+                {
+                    foreach (Order o in customerlist[cust].CustomerOrders.ToArray())
+                    {
+                        if (o.OrderId == order.OrderId)
+                        {
+                            customerlist[cust].CustomerOrders[customerlist[cust].CustomerOrders.IndexOf(o)] = order;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("Invalid process");
+            }
+        }
+        else if (process == "R")
+        {
+            if (order.OrderStatus == "Pending")
+            {
+                order.OrderStatus = "Rejected";
+                Console.WriteLine("Order " + order.OrderId + " rejected. Status: " + order.OrderStatus);
+                Console.WriteLine();
+                orderlist[order.OrderId] = order;
+                foreach (string cust in customerlist.Keys)
+                {
+                    foreach (Order o in customerlist[cust].CustomerOrders.ToArray())
+                    {
+                        if (o.OrderId == order.OrderId)
+                        {
+                            customerlist[cust].CustomerOrders[customerlist[cust].CustomerOrders.IndexOf(o)] = order;
+                        }
+                    }
+                }
+                refundedorders.Push(order);
+                Console.WriteLine("{0} ({1}) has been refunded {2}", customername, customeremail, order.OrderTotal);
+            }
+            else { Console.WriteLine("Invalid Process"); }
+        }
+        else if (process == "S")
+        {
+            if (order.OrderStatus == "Cancelled")
+            {
+                Console.WriteLine("Skipped");
+                Console.WriteLine();
+            }
+            else
+            {
+                Console.WriteLine("Invalid processs");
+            }
+        }
+        else if (process == "D")
+        {
+            Console.WriteLine(order.OrderStatus == "Preparing");
+            if (order.OrderStatus == "Preparing")
+            {
+                order.OrderStatus = "Delivered";
+                Console.WriteLine("Order " + order.OrderId + " will be delivered soon. Status: " + order.OrderStatus);
+                Console.WriteLine();
+                orderlist[order.OrderId] = order;
+                foreach (string cust in customerlist.Keys)
+                {
+                    foreach (Order o in customerlist[cust].CustomerOrders.ToArray())
+                    {
+                        if (o.OrderId == order.OrderId)
+                        {
+                            customerlist[cust].CustomerOrders[customerlist[cust].CustomerOrders.IndexOf(o)] = order;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                {
+                    Console.WriteLine("Invalid process");
+                }
+            }
+        }
+    }
+}
+//basic feature 7
 void ModifyOrder()
 {
     Console.WriteLine("Modify Order");
@@ -377,15 +573,22 @@ void ModifyOrder()
     while (true)
     {
         string email = ValidateNonEmptyInput("Enter Customer Email: ");
-        if (customerList.ContainsKey(email))
+        if (customerlist.ContainsKey(email))
         {
-            customer = customerList[email];
+            customer = customerlist[email];
             break;
         }
         Console.WriteLine("Email not found.");
     }
 
-    Dictionary<int, Order> orders = customer.CustomerOrders.Where(kvp => kvp.Value.OrderStatus == "Pending").ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+    Dictionary<int, Order> orders = new Dictionary<int, Order>();
+    foreach (Order o in customer.CustomerOrders)
+    {
+        if (o.OrderStatus == "Pending")
+        {
+            orders.Add(o.OrderId, o);
+        }
+    }
     if (orders.Count == 0)
     {
         Console.Write("No pending orders found, press Enter to terminate"); string? _ = Console.ReadLine();
@@ -523,8 +726,8 @@ void ModifyOrder()
 
                 double oldOrderTotal = order.OrderTotal;
                 double orderTotal = order.CalculateOrderTotal();
-                Console.WriteLine($"\nNew Order Total: ${orderTotal:F2} + $5.00 (delivery) = ${orderTotal+5:F2} ({(orderTotal >= oldOrderTotal ? "+" : "-")}${Math.Abs(orderTotal-oldOrderTotal):F2})");
-                Console.WriteLine($"{(orderTotal >- oldOrderTotal ? "Payment Amount" : "Refund Amount")}: ${Math.Abs(orderTotal-oldOrderTotal):F2}");
+                Console.WriteLine($"\nNew Order Total: ${orderTotal:F2} + $5.00 (delivery) = ${orderTotal + 5:F2} ({(orderTotal >= oldOrderTotal ? "+" : "-")}${Math.Abs(orderTotal - oldOrderTotal):F2})");
+                Console.WriteLine($"{(orderTotal > -oldOrderTotal ? "Payment Amount" : "Refund Amount")}: ${Math.Abs(orderTotal - oldOrderTotal):F2}");
                 if (orderTotal > oldOrderTotal)
                 {
                     while (true)
@@ -548,7 +751,8 @@ void ModifyOrder()
                             Console.WriteLine("Invalid input.");
                         }
                     }
-                };
+                }
+                ;
 
                 restaurant.RemoveOrder(oldOrder);
                 restaurant.AddOrder(order);
@@ -560,12 +764,12 @@ void ModifyOrder()
                 {
                     if (lines[i].StartsWith(order.OrderId.ToString()))
                     {
-                        string[] split = lines[i].Split(',',10);
+                        string[] split = lines[i].Split(',', 10);
                         lines[i] = $"{split[0]},{split[1]},{split[2]},{split[3]},{split[4]},{split[5]},{split[6]},{order.OrderTotal},{split[8]},{itemsString}";
                     }
                 }
                 File.WriteAllLines("orders.csv", lines);
-                
+
                 Console.WriteLine($"\nOrder {order.OrderId} updated. New Amount: ${order.OrderTotal:F2}");
                 break;
             }
@@ -586,12 +790,12 @@ void ModifyOrder()
         {
             if (lines[i].StartsWith(order.OrderId.ToString()))
             {
-                string[] split = lines[i].Split(',',10);
+                string[] split = lines[i].Split(',', 10);
                 lines[i] = $"{split[0]},{split[1]},{split[2]},{split[3]},{split[4]},{address},{split[6]},{split[7]},{split[8]},{split[9]}";
             }
         }
         File.WriteAllLines("orders.csv", lines);
-        
+
         Console.WriteLine($"\nOrder {order.OrderId} updated. New Address: {address}");
     }
     else if (choice == 3)
@@ -609,12 +813,120 @@ void ModifyOrder()
         {
             if (lines[i].StartsWith(order.OrderId.ToString()))
             {
-                string[] split = lines[i].Split(',',10);
+                string[] split = lines[i].Split(',', 10);
                 lines[i] = $"{split[0]},{split[1]},{split[2]},{split[3]},{time:HH:mm},{split[5]},{split[6]},{split[7]},{split[8]},{split[9]}";
             }
         }
         File.WriteAllLines("orders.csv", lines);
-        
+
         Console.WriteLine($"\nOrder {order.OrderId} updated. New Delivery Time: {time:HH:mm}");
     }
+}
+
+//basic feature 8
+void DeleteOrder()
+{
+    Console.WriteLine("Delete Order");
+    Console.WriteLine("============");
+    string email = ValidateInputInList("Enter Customer Email: ", customerlist.Keys, errorMessage: "Email not found.");
+    bool pending = false;
+    foreach (Order o in customerlist[email].CustomerOrders)
+    {
+        if (o.OrderStatus == "Pending")
+        {   
+            pending = true;
+            break;
+        }
+        else if (o.OrderStatus != "Pending" && o == customerlist[email].CustomerOrders[customerlist[email].CustomerOrders.Count - 1])
+        {
+            pending = false;
+        }
+    }
+    if (pending)
+    {
+        Console.WriteLine("Pending Orders:");
+        foreach (Order o in customerlist[email].CustomerOrders)
+        {
+            if (o.OrderStatus == "Pending")
+            {
+                Console.WriteLine(o.OrderId);
+            }
+        }
+
+        while (true)
+        {
+            try
+            {
+                bool flag = false;
+                Console.Write("Enter Order ID: ");
+                int ordid = Convert.ToInt32(Console.ReadLine());
+                foreach (Order o in customerlist[email].CustomerOrders)
+                {
+                    if (o.OrderStatus == "Pending")
+                    {
+                        if (ordid == o.OrderId)
+                        {
+                            Console.WriteLine("Customer: " + customerlist[email].CustomerName);
+                            Console.WriteLine("Ordered Items:");
+                            int count = 0;
+                            foreach (OrderedFoodItem ofl in o.OrderedFoodItemList)
+                            {
+                                count += 1;
+                                Console.WriteLine(count + ". " + ofl.ItemName + " - " + ofl.QtyOrdered);
+                            }
+                            Console.Write("Delivery date/time: ");
+                            Console.WriteLine(o.DeliveryDateTime);
+                            Console.Write("Total Amount: ");
+                            Console.WriteLine(o.OrderTotal);
+                            Console.Write("Order Status: ");
+                            Console.WriteLine(o.OrderStatus);
+                            Console.Write("Confirm deletion? [Y/N]: ");
+                            string option = Console.ReadLine();
+                            while (true)
+                            {
+                                if (option == "Y")
+                                {
+                                    o.OrderStatus = "Cancelled";
+                                    refundedorders.Push(o);
+                                    orderlist[o.OrderId] = o;
+                                    Console.WriteLine("Order " + o.OrderId + " cancelled. Refund of " + o.OrderTotal + " processed.");
+                                    break;
+                                }
+                                else if (option == "N")
+                                {
+                                    Console.WriteLine("Order deletion terminated.");
+                                    break;
+                                }
+                                else { Console.WriteLine("Invalid option"); }
+                            }
+                            flag = true;
+                            break;
+                        }
+                    }
+                    else if (ordid != o.OrderId && o == customerlist[email].CustomerOrders[customerlist[email].CustomerOrders.Count - 1])
+                    {
+                        flag = false;
+                    }
+                }
+                if (flag)
+                {
+                    break;
+                }
+                else
+                {
+                    Exception ex = new Exception();
+                    throw ex;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Please type a valid order ID.");
+            }
+        }
+    }
+    else
+    {
+        Console.WriteLine("No pending orders.");
+    }
+        
 }
