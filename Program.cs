@@ -30,7 +30,7 @@ while (true)
     Console.WriteLine("6. Delete an existing order");
     Console.WriteLine("0. Exit");
     Console.Write("Enter your choice: ");
-    string choice = Console.ReadLine();
+    string choice = Console.ReadLine() ?? "";
     if (choice == "1")
     {
         Console.WriteLine();
@@ -881,7 +881,7 @@ void DeleteOrder()
                             Console.Write("Order Status: ");
                             Console.WriteLine(o.OrderStatus);
                             Console.Write("Confirm deletion? [Y/N]: ");
-                            string option = Console.ReadLine();
+                            string option = Console.ReadLine() ?? "";
                             while (true)
                             {
                                 if (option == "Y")
@@ -918,7 +918,7 @@ void DeleteOrder()
                     throw ex;
                 }
             }
-            catch (Exception ex)
+            catch
             {
                 Console.WriteLine("Please type a valid order ID.");
             }
