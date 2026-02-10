@@ -29,9 +29,10 @@ while (true)
     Console.WriteLine("5. Modify an existing order");
     Console.WriteLine("6. Delete an existing order");
     Console.WriteLine("7. Display total order amount");
+    Console.WriteLine("8: Bulk process unprocessed orders");
     Console.WriteLine("0. Exit");
     Console.Write("Enter your choice: ");
-    string choice = Console.ReadLine();
+    string choice = Console.ReadLine() ?? "";
     if (choice == "1")
     {
         Console.WriteLine();
@@ -61,6 +62,10 @@ while (true)
     else if (choice == "7")
     {
         TotalOrderAmount();
+    }
+    else if (choice == "8")
+    {
+        BulkProcessing();
     }
     else if (choice == "0") { break; }
     else
@@ -887,7 +892,7 @@ void DeleteOrder()
                             Console.Write("Order Status: ");
                             Console.WriteLine(o.OrderStatus);
                             Console.Write("Confirm deletion? [Y/N]: ");
-                            string option = Console.ReadLine();
+                            string option = Console.ReadLine() ?? "";
                             while (true)
                             {
                                 if (option == "Y")
@@ -924,7 +929,7 @@ void DeleteOrder()
                     throw ex;
                 }
             }
-            catch (Exception ex)
+            catch
             {
                 Console.WriteLine("Please type a valid order ID.");
             }
@@ -935,6 +940,56 @@ void DeleteOrder()
         Console.WriteLine("No pending orders.");
     }
         
+}
+void BulkProcessing()
+{
+    int pending = 0;
+    int preparing = 0;
+    int rejected = 0;
+    int total = 0;
+    Console.WriteLine("Pending Orders: ");
+    foreach (Restaurant restaurant in restaurantlist.Values)
+    {
+        int restaurantPendingOrders = 0;
+        foreach (Order order in restaurant.RestaurantOrders)
+        {
+            total++;
+            if (order.OrderStatus == "Pending")
+            {
+                restaurantPendingOrders++;
+                pending++;
+                TimeSpan deliveryTime = order.DeliveryDateTime - order.OrderDateTime;
+                if (deliveryTime.TotalSeconds < 3600)
+                {
+                    order.OrderStatus = "Rejected";
+                    rejected++;
+                }
+                else
+                {
+                    order.OrderStatus = "Preparing";
+                    preparing++;
+                }
+
+                string[] lines = File.ReadAllLines("orders.csv");
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (lines[i].StartsWith(order.OrderId.ToString()))
+                    {
+                        string[] split = lines[i].Split(',', 10);
+                        lines[i] = $"{split[0]},{split[1]},{split[2]},{split[3]},{split[4]},{split[5]},{split[6]},{split[7]},{order.OrderStatus},{split[9]}";
+                    }
+                }
+                File.WriteAllLines("orders.csv", lines);
+            }
+        }
+        Console.WriteLine($"  {restaurant.RestaurantId}: {restaurantPendingOrders}");
+    }
+
+    Console.WriteLine($"{pending} {total}");
+    Console.WriteLine("\nSummary:");
+    Console.WriteLine($"Orders processed: {pending}");
+    Console.WriteLine($"Preparing / Rejected : {preparing} / {rejected}");
+    Console.WriteLine($"Percentage of processed orders out of all orders: {(double)pending / total:P1}");
 }
 void TotalOrderAmount()
 {   
