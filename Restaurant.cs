@@ -58,5 +58,15 @@ namespace prg2_assg
         {
             return $"Restaurant: {RestaurantName} ({RestaurantId})";
         }
+        public void AddOrder(Order order) => RestaurantOrders.Enqueue(order);
+        public bool RemoveOrder(Order order)
+        {
+            List<Order> orderList = [.. RestaurantOrders];
+            bool result = orderList.Remove(order);
+            RestaurantOrders = new Queue<Order>(orderList);
+
+            return result;
+        }
+        public Order NextOrder() => RestaurantOrders.Dequeue();
     }
 }

@@ -11,7 +11,7 @@ namespace prg2_assg
         public string EmailAddress { get; set; }
         public string CustomerName { get; set; }
 
-        public List<Order> CustomerOrders { get; set; } = new List<Order>();
+        public Dictionary<int, Order> CustomerOrders { get; set; } = [];
 
         public Customer(string emailAddress, string customerName)
         {
@@ -20,18 +20,18 @@ namespace prg2_assg
         }
         public void AddOrder(Order order)
         {
-            CustomerOrders.Add(order);
+            CustomerOrders[order.OrderId] = order;
         }
         public void DisplayAllOrders()
         {
-            foreach (Order order in CustomerOrders)
+            foreach (Order order in CustomerOrders.Values)
             {
                 Console.WriteLine(order.ToString());
             }
         }
         public bool RemoveOrder(Order order)
         {
-            return CustomerOrders.Remove(order);
+            return CustomerOrders.Remove(order.OrderId);
         }
         public override string ToString()
         {
