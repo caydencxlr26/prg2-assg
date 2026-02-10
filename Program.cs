@@ -941,6 +941,8 @@ void DeleteOrder()
     }
         
 }
+
+//advanced feature a (student 1,kayden)
 void BulkProcessing()
 {
     int pending = 0;
@@ -991,6 +993,8 @@ void BulkProcessing()
     Console.WriteLine($"Preparing / Rejected : {preparing} / {rejected}");
     Console.WriteLine($"Percentage of processed orders out of all orders: {(double)pending / total:P1}");
 }
+
+//advanced feature b (student 2,cayden)
 void TotalOrderAmount()
 {   
     double total;
