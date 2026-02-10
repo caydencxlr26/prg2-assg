@@ -28,9 +28,10 @@ while (true)
     Console.WriteLine("4. Process an order");
     Console.WriteLine("5. Modify an existing order");
     Console.WriteLine("6. Delete an existing order");
+    Console.WriteLine("7. Display total order amount");
     Console.WriteLine("0. Exit");
     Console.Write("Enter your choice: ");
-    string choice = Console.ReadLine() ?? "";
+    string choice = Console.ReadLine();
     if (choice == "1")
     {
         Console.WriteLine();
@@ -56,6 +57,10 @@ while (true)
     else if (choice == "6")
     {
         DeleteOrder();
+    }
+    else if (choice == "7")
+    {
+        TotalOrderAmount();
     }
     else if (choice == "0") { break; }
     else
@@ -279,7 +284,7 @@ void GetMenus()
             restaurantlist[restid].AddMenu(m);
         }
     }
-}
+}//basic feature 3 (student 1,kayden)
 void ListRestaurants()
 {
     Console.WriteLine("All Restaurants and Menu Items");
@@ -293,8 +298,8 @@ void ListRestaurants()
         }
         Console.WriteLine();
     }
-}
-void ListOrders()
+}//basic feature 4 (student 2,cayden)
+void ListOrders() 
 {
     Console.WriteLine("All Orders");
     Console.WriteLine("==========");
@@ -328,7 +333,8 @@ void ListOrders()
     }
     Console.WriteLine();
 }
-void CreateNewOrder(int currentOrderId)
+//basic feature 5 (student 1, kayden)
+void CreateNewOrder(int currentOrderId) 
 {
     Console.WriteLine("Create New Order");
     Console.WriteLine("================");
@@ -439,7 +445,7 @@ void CreateNewOrder(int currentOrderId)
     Console.WriteLine($"\nOrder {order.OrderId} created successfully! Status: Pending");
 }
 
-//basic feature 6
+//basic feature 6(student2, cayden)
 void ProcessOrder()
 {
     Console.WriteLine("Process Order");
@@ -518,7 +524,7 @@ void ProcessOrder()
                     }
                 }
                 refundedorders.Push(order);
-                Console.WriteLine("{0} ({1}) has been refunded {2}", customername, customeremail, order.OrderTotal);
+                Console.WriteLine("{0} ({1}) has been refunded {2:C}", customername, customeremail, order.OrderTotal);
             }
             else { Console.WriteLine("Invalid Process"); }
         }
@@ -563,7 +569,7 @@ void ProcessOrder()
         }
     }
 }
-//basic feature 7
+//basic feature 7 (student1,kayden)
 void ModifyOrder()
 {
     Console.WriteLine("Modify Order");
@@ -823,7 +829,7 @@ void ModifyOrder()
     }
 }
 
-//basic feature 8
+//basic feature 8 (student 2,cayden)
 void DeleteOrder()
 {
     Console.WriteLine("Delete Order");
@@ -881,7 +887,7 @@ void DeleteOrder()
                             Console.Write("Order Status: ");
                             Console.WriteLine(o.OrderStatus);
                             Console.Write("Confirm deletion? [Y/N]: ");
-                            string option = Console.ReadLine() ?? "";
+                            string option = Console.ReadLine();
                             while (true)
                             {
                                 if (option == "Y")
@@ -918,7 +924,7 @@ void DeleteOrder()
                     throw ex;
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 Console.WriteLine("Please type a valid order ID.");
             }
@@ -929,4 +935,43 @@ void DeleteOrder()
         Console.WriteLine("No pending orders.");
     }
         
+}
+void TotalOrderAmount()
+{   
+    double total;
+    double refundtotal;
+    double grandtotal = 0;
+    double grandrefund= 0;
+    foreach(string r in restaurantlist.Keys)
+    {
+        total = 0;
+        refundtotal = 0;
+        Console.WriteLine(restaurantlist[r].RestaurantName);
+        foreach (Order o  in restaurantlist[r].RestaurantOrders)
+        {
+            if (o.OrderStatus == "Delivered")
+            {
+                Console.WriteLine(o);
+                total += o.OrderTotal;
+                grandtotal += o.OrderTotal;
+            }
+        }
+        Console.WriteLine("Order amount: {0:C}",total);
+        
+        foreach (Order o in restaurantlist[r].RestaurantOrders)
+        {
+            if (o.OrderStatus == "Cancelled")
+            {
+                Console.WriteLine(o);
+                refundtotal += o.OrderTotal;
+                grandrefund += o.OrderTotal;
+            }
+        }
+        Console.WriteLine("Refund amount: {0:C}",refundtotal);
+        Console.WriteLine();
+    }
+    Console.WriteLine("Total order amount: {0:C}",grandtotal);
+    Console.WriteLine("Total refund amount: {0:C}",grandrefund);
+    Console.WriteLine("Gruberoo profits: {0:C}",grandtotal-grandrefund);
+    Console.WriteLine();
 }
